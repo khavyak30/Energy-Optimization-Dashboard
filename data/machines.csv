@@ -1,0 +1,9 @@
+id,name,line,plant,oee,avail,perf,qual,health,rul,status,loss,loss_min,vib,temp,degrade_rate
+MCH-01,Injection Moulding #1,Line A,P1,71.2,88.4,83.6,96.3,71,34,warning,Speed Loss,42,3.8,74,0.08
+MCH-02,Injection Moulding #2,Line A,P1,84.6,94.1,91.2,98.5,84,82,good,Minor Stops,18,1.9,61,0.04
+MCH-03,CNC Machining Centre,Line B,P1,62.1,78.3,82.4,96.1,38,9,critical,Unplanned Breakdown,94,9.1,92,0.20
+MCH-04,Assembly Station 1,Line B,P1,89.3,96.2,94.1,98.8,89,105,good,Changeover & Setup,11,1.2,48,0.02
+MCH-05,Welding Robot A,Line C,P2,76.4,91.3,86.2,97.4,76,41,caution,Minor Stops,31,3.2,68,0.06
+MCH-06,Welding Robot B,Line C,P2,55.8,72.1,80.3,96.8,32,7,critical,Unplanned Breakdown,128,10.2,97,0.25
+MCH-07,Conveyor System X1,Line D,P2,91.2,97.4,95.3,98.3,91,138,good,Startup Defects,8,0.8,42,0.01
+MCH-08,Packaging Line P1,Line D,P2,78.9,89.7,90.4,97.5,78,58,caution,Speed Loss,27,2.6,55,0.05

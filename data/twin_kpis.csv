@@ -1,0 +1,9 @@
+kpi_id,kpi_name,unit,actual,twin_predicted,divergence_threshold_pct,asset_id
+PLANT_OEE,Plant OEE,%,76.8,79.4,3.0,
+REACTOR_TEMP,Reactor Temp TIC-101,°C,182,186,2.0,MCH-01
+MCH06_VIBRATION,MCH-06 Vibration RMS,mm/s,10.2,8.1,1.5,MCH-06
+LINEDC_SPEED,Conveyor Speed Line D,m/s,1.24,1.24,0.05,MCH-07
+PLANT_ENERGY,Plant kWh/Unit,kWh/u,5.14,4.82,5.0,
+YIELD_PCT,Batch Yield %,%,89.3,91.5,2.0,
+MCH03_TEMP,MCH-03 Spindle Temp,°C,92,72,8.0,MCH-03
+COOLANT_FLOW,Coolant Flow FIC-401,L/min,28.6,28.6,2.0,

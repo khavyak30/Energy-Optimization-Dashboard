@@ -1,0 +1,5 @@
+id,product,qty_kg,plan_yield,actual_yield,status,start_date,end_date
+PP-88412,Compound X-12 Grade A,2400,91.0,91.3,completed,2024-04-16 06:00,2024-04-16 14:00
+PP-88413,Compound Y-07 Grade B,1800,89.5,88.2,completed,2024-04-16 14:00,2024-04-16 22:00
+PP-88414,Compound X-12 Grade A,2400,91.0,,in_process,2024-04-17 06:00,2024-04-17 14:00
+PP-88415,Compound Z-04 Grade S,900,87.0,,planned,2024-04-17 14:00,2024-04-17 18:00

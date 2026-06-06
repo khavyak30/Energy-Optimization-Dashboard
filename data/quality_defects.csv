@@ -1,0 +1,6 @@
+id,time,line,component,defect_type,severity,action,confidence
+DEF-0441,11:24,Line B,Housing MCH-03,Surface crack,major,Rejected,0.97
+DEF-0440,09:18,Line A,Bracket MCH-01,Dimensional tolerance,minor,Re-inspect,0.91
+DEF-0439,08:02,Line B,Weld joint,Assembly misalignment,major,Rejected,0.95
+DEF-0438,07:15,Line C,Shaft MCH-05,Surface scratch,cosmetic,Accept,0.88
+DEF-0437,06:40,Line D,Bearing race,Dimensional tolerance,minor,Re-inspect,0.93

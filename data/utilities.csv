@@ -1,0 +1,5 @@
+id,name,health,rul,status,vib,temp,pressure,oee_link,degrade_rate
+CMP-001,Air Compressor A1,34,12,critical,8.7,94,12.1,Line A pressure risk,0.18
+CHP-002,Chiller Unit 1,67,48,warning,2.4,18,3.2,-2.8% perf MCH-01,0.07
+HYD-003,Hydraulic Power Unit,81,74,good,1.6,58,180,,0.03
+PMP-005,Coolant Pump C7,78,72,caution,2.1,58,8.3,,0.04

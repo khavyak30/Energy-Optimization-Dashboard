@@ -1,0 +1,4 @@
+ptw_id,asset_id,work_type,technician,status,jha_complete,isolation_verified,competency_valid
+PTW-0341,MCH-06,Hot work,K. Patel,pending,true,true,true
+PTW-0340,CMP-001,Confined space,R. Singh,approved,true,true,true
+PTW-0339,HYD-003,Electrical isolation,M. Verma,rejected,false,false,true

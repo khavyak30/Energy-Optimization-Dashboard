@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ManuAI – Energy Optimisation Agent</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f6f9;
+    --sidebar-bg: #1a1f2e;
+    --sidebar-text: #a8b3c8;
+    --sidebar-active: #fff;
+    --sidebar-active-bg: rgba(255,255,255,0.08);
+    --sidebar-accent: #f97316;
+    --topbar-bg: #fff;
+    --card-bg: #fff;
+    --border: #e5e9f0;
+    --text-primary: #1a2035;
+    --text-secondary: #6b7a99;
+    --green: #16a34a;
+    --green-light: #dcfce7;
+    --red: #dc2626;
+    --red-light: #fee2e2;
+    --orange: #ea580c;
+    --orange-light: #ffedd5;
+    --yellow: #ca8a04;
+    --yellow-light: #fef9c3;
+    --blue: #2563eb;
+    --blue-light: #dbeafe;
+    --teal: #0891b2;
+    --purple: #7c3aed;
+    --right-bg: #f8fafc;
+    --shadow: 0 1px 4px rgba(0,0,0,0.08);
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text-primary); display: flex; flex-direction: column; height: 100vh; overflow: hidden; font-size: 13px; }
+
+  /* TOP BAR */
+  .topbar { background: var(--topbar-bg); border-bottom: 1px solid var(--border); height: 44px; display: flex; align-items: center; padding: 0 16px; gap: 12px; flex-shrink: 0; z-index: 100; }
+  .topbar-logo { font-weight: 800; font-size: 15px; color: var(--text-primary); letter-spacing: -0.5px; }
+  .topbar-logo span { color: var(--blue); }
+  .topbar-title { font-size: 12px; color: var(--text-secondary); margin-left: 4px; }
+  .topbar-live { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--green); font-weight: 600; margin-left: 8px; }
+  .live-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+  .topbar-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tag { padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; cursor: pointer; transition: opacity .2s; }
+  .tag:hover { opacity: 0.8; }
+  .tag-blue { background: var(--blue-light); color: var(--blue); }
+  .tag-green { background: var(--green-light); color: var(--green); }
+  .tag-orange { background: var(--orange-light); color: var(--orange); }
+  .tag-purple { background: #ede9fe; color: var(--purple); }
+  .tag-teal { background: #cffafe; color: var(--teal); }
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .badge-critical { background: var(--red); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+  .badge-safety { background: #fbbf24; color: #78350f; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+  .badge-oee { background: var(--blue-light); color: var(--blue); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+  .badge-sem { background: #ede9fe; color: var(--purple); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+
+  /* LAYOUT */
+  .layout { display: flex; flex: 1; overflow: hidden; }
+
+  /* SIDEBAR */
+  .sidebar { width: 180px; background: #1e2438; display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; }
+  .sidebar-section { padding: 18px 14px 6px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #475569; }
+  .sidebar-item { display: flex; align-items: center; gap: 8px; padding: 9px 14px; color: #94a3b8; cursor: pointer; border-radius: 0; margin: 0; transition: all .15s; font-size: 12px; border-left: 3px solid transparent; }
+  .sidebar-item:hover { background: #273045; color: #e2e8f0; border-left-color: #475569; }
+  .sidebar-item.active { background: #273045; color: #fff; border-left-color: #f97316; font-weight: 600; }
+  .sidebar-icon { width: 15px; height: 15px; flex-shrink: 0; }
+  .sidebar-bottom { margin-top: auto; padding: 12px; border-top: 1px solid #2d3752; }
+  .sidebar-kpi { padding: 7px 10px; background: #273045; border-radius: 6px; margin-bottom: 6px; }
+  .sidebar-kpi-label { font-size: 9px; color: #475569; text-transform: uppercase; letter-spacing: 0.8px; }
+  .sidebar-kpi-value { font-size: 18px; font-weight: 700; color: #f1f5f9; line-height: 1.2; }
+  .events-badge { background: var(--red); color: #fff; border-radius: 10px; font-size: 9px; font-weight: 700; padding: 1px 5px; }
+
+  /* CHATBOT */
+  .chat-wrap { display:flex; flex-direction:column; height:100%; padding:0; }
+  .chat-messages { flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:8px; min-height:0; }
+  .chat-bubble { max-width:90%; padding:8px 11px; border-radius:10px; font-size:11px; line-height:1.55; }
+  .chat-bubble.bot { background:#eef2ff; color:#1e2438; border-bottom-left-radius:2px; align-self:flex-start; }
+  .chat-bubble.user { background:#2563eb; color:#fff; border-bottom-right-radius:2px; align-self:flex-end; }
+  .chat-bubble .chat-time { font-size:9px; opacity:0.55; margin-top:3px; }
+  .chat-presets { padding:8px 10px; display:flex; flex-wrap:wrap; gap:5px; border-top:1px solid var(--border); background:#fafbfc; }
+  .chat-preset { font-size:10px; padding:4px 9px; border-radius:12px; border:1px solid #bfdbfe; background:#eff6ff; color:#2563eb; cursor:pointer; transition:all .15s; font-weight:500; }
+  .chat-preset:hover { background:#2563eb; color:#fff; }
+  .chat-input-row { display:flex; gap:6px; padding:8px 10px; border-top:1px solid var(--border); background:#fff; }
+  .chat-input { flex:1; border:1px solid var(--border); border-radius:20px; padding:6px 12px; font-size:11px; outline:none; font-family:inherit; }
+  .chat-input:focus { border-color:#2563eb; }
+  .chat-send { background:#2563eb; color:#fff; border:none; border-radius:20px; padding:6px 14px; font-size:11px; font-weight:700; cursor:pointer; transition:background .15s; }
+  .chat-send:hover { background:#1d4ed8; }
+  .chat-typing { display:flex; gap:3px; align-items:center; padding:2px 0; }
+  .chat-typing span { width:6px; height:6px; background:#94a3b8; border-radius:50%; animation:typingDot 1.2s infinite; }
+  .chat-typing span:nth-child(2){animation-delay:.2s} .chat-typing span:nth-child(3){animation-delay:.4s}
+  @keyframes typingDot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+
+  /* MAIN */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* AGENT BAR */
+  .agent-bar { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 8px 16px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .agent-label { font-size: 10px; color: var(--text-secondary); font-weight: 600; background: #f1f5f9; border-radius: 4px; padding: 2px 6px; }
+  .agent-name { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+  .agent-tags { display: flex; gap: 5px; }
+  .agent-tag { padding: 3px 9px; border-radius: 4px; font-size: 10px; font-weight: 600; border: 1px solid currentColor; }
+  .agent-tag-blue { color: var(--blue); border-color: #bfdbfe; background: var(--blue-light); }
+  .agent-tag-gray { color: #64748b; border-color: #e2e8f0; background: #f8fafc; }
+  .agent-target { margin-left: auto; background: linear-gradient(135deg,#1e3a5f,#2563eb); color: #fff; padding: 4px 12px; border-radius: 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.3px; }
+
+  /* TABS */
+  .tabs { background: var(--card-bg); border-bottom: 1px solid var(--border); display: flex; gap: 0; padding: 0 16px; flex-shrink: 0; }
+  .tab { padding: 10px 16px; font-size: 12px; font-weight: 500; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; white-space: nowrap; }
+  .tab:hover { color: var(--text-primary); }
+  .tab.active { color: var(--orange); border-bottom-color: var(--orange); font-weight: 600; }
+
+  /* CONTENT */
+  .content-area { display: flex; flex: 1; overflow: hidden; }
+  .tab-content { flex: 1; overflow-y: auto; padding: 14px; display: none; }
+  .tab-content.active { display: block; }
+
+  /* CARDS */
+  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); }
+  .card-title { font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+  .card-sub { font-size: 11px; color: var(--text-secondary); }
+
+  /* HOW IT WORKS */
+  .how-it-works { background: #fffbf5; border: 1px solid #fed7aa; border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; }
+  .how-title { font-size: 12px; font-weight: 700; color: var(--orange); margin-bottom: 4px; }
+  .how-text { font-size: 11px; color: #6b7a99; line-height: 1.6; }
+
+  /* KPI STRIP */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+  .kpi-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .kpi-label { font-size: 10px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .kpi-value { font-size: 26px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+  .kpi-value.green { color: var(--green); }
+  .kpi-value.orange { color: var(--orange); }
+  .kpi-value.blue { color: var(--blue); }
+  .kpi-value.red { color: var(--red); }
+  .kpi-meta { font-size: 10px; display: flex; align-items: center; gap: 4px; }
+  .kpi-meta.good { color: var(--green); }
+  .kpi-meta.warn { color: var(--orange); }
+  .kpi-meta.bad { color: var(--red); }
+
+  /* CHARTS */
+  .chart-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+  .chart-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+  .chart-legend { display: flex; gap: 12px; font-size: 10px; color: var(--text-secondary); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  canvas { display: block; }
+
+  /* ASSET BREAKDOWN */
+  .asset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .asset-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .asset-row:last-child { border-bottom: none; }
+  .asset-name { font-size: 12px; font-weight: 500; }
+  .asset-kw { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+  .anomaly-flag { font-size: 9px; background: var(--red-light); color: var(--red); padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+  .asset-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 3px; }
+  .asset-bar-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg,var(--blue),var(--teal)); }
+
+  /* ANOMALY CARDS */
+  .anomaly-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; transition: box-shadow .2s; }
+  .anomaly-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+  .anomaly-badge { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 3px; margin-bottom: 6px; display: inline-block; }
+  .anomaly-badge.detected { background: var(--orange-light); color: var(--orange); }
+  .anomaly-title { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+  .anomaly-meta { display: flex; gap: 20px; }
+  .anomaly-meta-item label { font-size: 9px; color: var(--text-secondary); text-transform: uppercase; display: block; }
+  .anomaly-meta-item .val { font-size: 13px; font-weight: 700; }
+  .anomaly-meta-item .val.cost { color: var(--red); }
+  .anomaly-asset { text-align: right; }
+  .anomaly-asset label { font-size: 9px; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 4px; }
+  .anomaly-asset .asset-id { font-size: 16px; font-weight: 800; color: var(--blue); }
+  .approve-btn { background: linear-gradient(135deg,#2563eb,#1d4ed8); color: #fff; border: none; padding: 7px 14px; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all .2s; margin-top: 8px; }
+  .approve-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.4); }
+
+  /* DISPATCH */
+  .dispatch-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; }
+  .dispatch-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .dispatch-type { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 3px; }
+  .dispatch-type.hvac { background: var(--blue-light); color: var(--blue); }
+  .dispatch-type.idle { background: #f0fdf4; color: var(--green); }
+  .dispatch-type.demand { background: var(--orange-light); color: var(--orange); }
+  .dispatch-type.chiller { background: #ede9fe; color: var(--purple); }
+  .dispatch-status { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 3px; margin-left: auto; }
+  .dispatch-status.pending { background: #fef3c7; color: #92400e; }
+  .dispatch-status.dispatched { background: var(--green-light); color: var(--green); }
+  .dispatch-status.alert { background: var(--red-light); color: var(--red); }
+  .dispatch-name { font-size: 14px; font-weight: 700; }
+  .dispatch-desc { font-size: 11px; color: var(--text-secondary); margin: 4px 0 10px; }
+  .dispatch-kpis { display: flex; gap: 16px; font-size: 11px; color: var(--text-secondary); margin-bottom: 10px; }
+  .dispatch-kpis span strong { color: var(--text-primary); }
+  .dispatch-actions { display: flex; gap: 8px; }
+  .btn-dispatch { background: linear-gradient(135deg,#2563eb,#1d4ed8); color: #fff; border: none; padding: 6px 14px; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all .2s; }
+  .btn-dispatch:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+  .btn-schedule { background: #f8fafc; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 14px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all .2s; }
+  .btn-schedule:hover { background: var(--border); }
+  .btn-dispatched { background: var(--green-light); color: var(--green); border: none; padding: 6px 14px; border-radius: 5px; font-size: 11px; font-weight: 700; }
+
+  /* ASSET HEALTH TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  th { background: #f8fafc; padding: 8px 10px; text-align: left; font-size: 10px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border); white-space: nowrap; }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text-primary); }
+  tr:hover td { background: #f8fafc; cursor: pointer; }
+  .status-ok { color: var(--green); font-weight: 600; }
+  .status-warn { color: var(--orange); font-weight: 600; }
+  .status-alert { color: var(--red); font-weight: 600; }
+  .asset-type { font-size: 9px; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+  .type-chiller { background: #ede9fe; color: var(--purple); }
+  .type-hvac { background: var(--blue-light); color: var(--blue); }
+  .type-comp { background: var(--orange-light); color: var(--orange); }
+  .type-furnace { background: var(--red-light); color: var(--red); }
+  .type-light { background: #fef9c3; color: var(--yellow); }
+
+  /* ISO 50001 */
+  .iso-status-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px; }
+  .iso-status-card { background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+  .iso-status-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 6px; }
+  .iso-status-value { font-size: 22px; font-weight: 800; }
+  .iso-status-value.blue { color: var(--blue); }
+  .iso-status-value.green { color: var(--green); }
+  .iso-status-value.teal { color: var(--teal); }
+  .iso-status-target { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+  .progress-wrap { margin-bottom: 12px; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+  .progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 1.5s ease; }
+  .progress-fill.green { background: linear-gradient(90deg,var(--green),#22c55e); }
+  .progress-fill.blue { background: linear-gradient(90deg,var(--blue),#60a5fa); }
+  .progress-fill.orange { background: linear-gradient(90deg,var(--orange),#fb923c); }
+  .progress-fill.purple { background: linear-gradient(90deg,var(--purple),#a78bfa); }
+
+  /* RIGHT PANEL */
+  .right-panel { width: 260px; background: var(--right-bg); border-left: 1px solid var(--border); overflow-y: auto; flex-shrink: 0; }
+  .right-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--card-bg); }
+  .right-tab { flex: 1; padding: 9px 8px; text-align: center; font-size: 11px; font-weight: 500; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; }
+  .right-tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 700; }
+  .right-panel-body { padding: 10px; }
+  .right-section { margin-bottom: 14px; }
+  .right-section-title { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); margin-bottom: 8px; text-align: center; }
+  .semantic-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; }
+  .semantic-title { font-size: 11px; font-weight: 700; color: var(--green); }
+  .semantic-sub { font-size: 10px; color: var(--text-secondary); }
+  .rec-card { border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; }
+  .rec-card.high { background: #fff7f7; border: 1px solid #fecaca; }
+  .rec-card.medium { background: #fff8f0; border: 1px solid #fed7aa; }
+  .rec-card.info { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .rec-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .rec-level { font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 3px; text-transform: uppercase; }
+  .rec-level.high { background: var(--red-light); color: var(--red); }
+  .rec-level.medium { background: var(--orange-light); color: var(--orange); }
+  .rec-level.info { background: var(--green-light); color: var(--green); }
+  .rec-title { font-size: 11px; font-weight: 700; }
+  .rec-yield { font-size: 11px; font-weight: 800; margin-left: auto; }
+  .rec-yield.pos { color: var(--green); }
+  .rec-body { font-size: 10px; color: var(--text-secondary); line-height: 1.5; }
+  .rec-blocked { font-size: 9px; background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 3px; margin-top: 4px; display: inline-block; }
+  .rec-actions { display: flex; gap: 5px; margin-top: 6px; }
+  .rec-btn { font-size: 9px; padding: 3px 8px; border-radius: 4px; border: 1px solid; cursor: pointer; font-weight: 600; }
+  .rec-btn.push { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .rec-btn.dismiss { background: #fff; color: var(--text-secondary); border-color: var(--border); }
+  .rec-btn.written { background: var(--green-light); color: var(--green); border-color: #bbf7d0; }
+  .safety-card { background: var(--red-light); border: 1px solid #fecaca; border-radius: 6px; padding: 8px 10px; }
+  .safety-label { font-size: 8px; font-weight: 800; color: var(--red); text-transform: uppercase; margin-bottom: 3px; }
+  .safety-title { font-size: 11px; font-weight: 700; color: var(--red); }
+  .safety-body { font-size: 10px; color: var(--text-secondary); margin-top: 3px; }
+  .cross-event { border-bottom: 1px solid var(--border); padding: 6px 0; }
+  .cross-event:last-child { border-bottom: none; }
+  .cross-event-header { display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
+  .cross-tag { font-size: 8px; font-weight: 700; padding: 1px 5px; border-radius: 3px; }
+  .cross-tag.pdm { background: #ede9fe; color: var(--purple); }
+  .cross-tag.oee { background: var(--blue-light); color: var(--blue); }
+  .cross-tag.yield { background: var(--green-light); color: var(--green); }
+  .cross-event-title { font-size: 9px; font-weight: 700; color: var(--text-primary); }
+  .cross-event-time { font-size: 9px; color: var(--text-secondary); margin-left: auto; }
+  .cross-event-body { font-size: 10px; color: var(--text-secondary); line-height: 1.4; }
+  .cross-event-loss { font-size: 10px; font-weight: 700; color: var(--red); }
+
+  /* SCADA OVERLAY */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; display: none; align-items: center; justify-content: center; }
+  .overlay.show { display: flex; }
+  .overlay-box { background: #fff; border-radius: 12px; width: 520px; max-width: 95vw; padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .overlay-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .overlay-title { font-size: 18px; font-weight: 800; }
+  .overlay-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-secondary); }
+  .overlay-section { background: #f8fafc; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .overlay-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; border-bottom: 1px solid var(--border); }
+  .overlay-row:last-child { border-bottom: none; }
+  .overlay-row label { color: var(--text-secondary); font-weight: 500; }
+  .overlay-row span { font-weight: 700; }
+  .overlay-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-confirm { flex: 1; background: linear-gradient(135deg,#16a34a,#15803d); color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 13px; font-weight: 800; cursor: pointer; transition: all .2s; letter-spacing: 0.3px; }
+  .btn-confirm:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(22,163,74,0.4); }
+  .btn-cancel { background: #f8fafc; border: 1px solid var(--border); color: var(--text-secondary); padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .overlay-warning { background: var(--orange-light); border: 1px solid #fed7aa; border-radius: 6px; padding: 10px 12px; font-size: 11px; color: var(--orange); margin-bottom: 14px; }
+
+  /* DISPATCHED ANIMATION */
+  @keyframes dispatchAnim { 0%{opacity:0;transform:scale(0.8)} 60%{transform:scale(1.05)} 100%{opacity:1;transform:scale(1)} }
+  .dispatched-success { animation: dispatchAnim 0.4s ease forwards; display: flex; align-items: center; gap: 6px; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .section-title { font-size: 15px; font-weight: 700; }
+  .section-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .total-badge { background: var(--red-light); color: var(--red); padding: 4px 12px; border-radius: 5px; font-size: 12px; font-weight: 700; }
+  .automated-badge { background: var(--green-light); color: var(--green); padding: 4px 12px; border-radius: 5px; font-size: 11px; font-weight: 700; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .enpi-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .enpi-row:last-child { border-bottom: none; }
+  .enpi-plant { font-weight: 600; }
+  .enpi-val { font-weight: 700; font-size: 13px; }
+  .enpi-badge { font-size: 9px; padding: 2px 6px; border-radius: 10px; font-weight: 700; }
+  .enpi-badge.best { background: var(--green-light); color: var(--green); }
+  .enpi-badge.worst { background: var(--red-light); color: var(--red); }
+  .target-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .target-item { background: linear-gradient(135deg,#1e3a5f11,#2563eb11); border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px; }
+  .target-icon { font-size: 18px; margin-bottom: 4px; }
+  .target-label { font-size: 10px; color: var(--text-secondary); }
+  .target-val { font-size: 16px; font-weight: 800; color: var(--blue); }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">Manu<span>AI</span></div>
+  <div class="topbar-title">Unified Manufacturing Intelligence Platform</div>
+  <div class="topbar-live"><span class="live-dot"></span> Live · 9 agents · 2 plants</div>
+  <div class="topbar-tags">
+    <span class="tag tag-blue">OEE</span>
+    <span class="tag tag-green">Yield</span>
+    <span class="tag tag-blue">PdM·Parts</span>
+    <span class="tag tag-orange">Quality</span>
+    <span class="tag tag-orange" style="background:#fff7ed;color:#ea580c">Energy</span>
+    <span class="tag tag-teal">Supply</span>
+    <span class="tag tag-purple">Twin</span>
+    <span class="tag" style="background:#f0fdf4;color:#16a34a">Safety</span>
+    <span class="tag tag-purple">Semantic</span>
+  </div>
+  <div style="display:flex;gap:4px;margin-left:8px;" id="plantSelector">
+    <span class="plant-btn" onclick="switchPlant('all',this)" style="cursor:pointer;font-size:11px;padding:2px 8px;border-radius:3px;color:var(--text-secondary)">All Plants</span>
+    <span class="plant-btn" onclick="switchPlant('p1',this)" style="cursor:pointer;font-size:11px;padding:2px 8px;border-radius:3px;color:var(--text-secondary)">Plant 1</span>
+    <span class="plant-btn active-plant" onclick="switchPlant('p2',this)" style="cursor:pointer;font-size:11px;padding:2px 8px;border-radius:3px;font-weight:700;color:var(--blue);background:var(--blue-light)">Plant 2</span>
+  </div>
+  <div class="topbar-right">
+    <span class="badge-critical">3 CRITICAL</span>
+    <span class="badge-safety">1 SAFETY</span>
+    <span class="badge-oee">OEE 76.8%</span>
+    <span class="badge-sem">SEMANTIC LAYER</span>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">Platform</div>
+    <div class="sidebar-item active" onclick="highlightSidebar(this)">
+      <svg class="sidebar-icon" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M8 4v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+      Unified Overview
+    </div>
+    <div class="sidebar-item" onclick="highlightSidebar(this)">
+      <svg class="sidebar-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h12M2 4h12M2 12h8"/></svg>
+      Semantic Layer
+    </div>
+    <div class="sidebar-bottom">
+      <div class="sidebar-kpi">
+        <div class="sidebar-kpi-label">OEE</div>
+        <div class="sidebar-kpi-value" id="sb-oee">76.8%</div>
+      </div>
+      <div class="sidebar-kpi">
+        <div class="sidebar-kpi-label">YIELD</div>
+        <div class="sidebar-kpi-value" id="sb-yield">91.3%</div>
+      </div>
+      <div class="sidebar-kpi">
+        <div class="sidebar-kpi-label">QUALITY</div>
+        <div class="sidebar-kpi-value" id="sb-quality">98.6%</div>
+      </div>
+      <div class="sidebar-kpi" style="background:rgba(220,38,38,0.15)">
+        <div class="sidebar-kpi-label">EVENTS</div>
+        <div class="sidebar-kpi-value" id="sb-events" style="color:#f87171">3</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN AREA -->
+  <div class="main">
+    <!-- AGENT BAR -->
+    <div class="agent-bar">
+      <div class="agent-label">Q3</div>
+      <div class="agent-name">Energy Optimisation Agent</div>
+      <div class="agent-tags">
+        <span class="agent-tag agent-tag-blue">SMART METERS</span>
+        <span class="agent-tag agent-tag-blue">SCADA</span>
+        <span class="agent-tag agent-tag-gray">GRID PRICING API</span>
+      </div>
+      <div class="agent-target">TARGET: –15% ENERGY COST, –12% CARBON INTENSITY</div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('dashboard',this)">Dashboard</div>
+      <div class="tab" onclick="switchTab('waste',this)">Waste Detection</div>
+      <div class="tab" onclick="switchTab('dispatch',this)">Load Dispatch</div>
+      <div class="tab" onclick="switchTab('iso',this)">ISO 50001</div>
+    </div>
+
+    <!-- CONTENT AREA -->
+    <div class="content-area">
+
+      <!-- ===================== DASHBOARD TAB ===================== -->
+      <div class="tab-content active" id="tab-dashboard">
+        <div class="how-it-works">
+          <div class="how-title">How It Works</div>
+          <div class="how-text">Smart meters, SCADA, and grid pricing APIs stream energy data to an AI engine profiling load by asset and shift. The model identifies demand flexibility and dispatches load adjustments autonomously. Carbon intensity feeds ESG reporting pipelines automatically.</div>
+        </div>
+
+        <!-- KPI STRIP -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Energy Cost</div>
+            <div class="kpi-value green" id="kpi-cost">-13.2%</div>
+            <div class="kpi-meta good">▲ target -15%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Carbon Intensity</div>
+            <div class="kpi-value green" data-kpi="carbon-val">0.69 kg</div>
+            <div class="kpi-meta good" data-kpi="carbon-sub">kgCO2/unit · -12% vs Nov</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Peak Demand</div>
+            <div class="kpi-value orange" id="kpi-peak">1,612 <span style="font-size:14px">kW</span></div>
+            <div class="kpi-meta warn" data-kpi="peak-meta">▼ +4% above target</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Waste Patterns</div>
+            <div class="kpi-value red" data-kpi="waste-val">5</div>
+            <div class="kpi-meta bad" data-kpi="waste-sub">Rs 5,372 today</div>
+          </div>
+        </div>
+
+        <!-- LOAD PROFILE CHART -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="card-title">Plant Energy Load – 24h</div>
+              <div class="card-sub">Smart meters + SCADA · anomalies flagged within 15 minutes</div>
+            </div>
+            <div class="chart-legend">
+              <span><span class="legend-dot" style="background:#ea580c"></span>Load (kW)</span>
+              <span><span class="legend-dot" style="background:rgba(37,99,235,0.3)"></span>Peak Threshold</span>
+              <span><span class="legend-dot" style="background:rgba(22,163,74,0.4)"></span>AI Dispatch Window</span>
+            </div>
+          </div>
+          <canvas id="loadChart" height="120"></canvas>
+        </div>
+
+        <!-- ASSET BREAKDOWN + CARBON TREND -->
+        <div class="two-col">
+          <div class="chart-card" style="margin-bottom:0">
+            <div class="card-title" style="margin-bottom:8px">Asset-Level Energy Profile</div>
+            <div class="card-sub" style="margin-bottom:10px">kW by machine · SCADA-flagged</div>
+            <div>
+              <div class="asset-row">
+                <div><div class="asset-name">Injection Moulding #1</div><div class="asset-bar"><div class="asset-bar-fill" style="width:85%"></div></div></div>
+                <div style="text-align:right"><div class="asset-kw">148 kW</div></div>
+              </div>
+              <div class="asset-row">
+                <div><div class="asset-name">CNC Machining Centre</div><div class="asset-bar"><div class="asset-bar-fill" style="width:62%;background:linear-gradient(90deg,#ea580c,#f97316)"></div></div></div>
+                <div style="text-align:right"><div class="asset-kw">92 kW</div><span class="anomaly-flag">ANOMALY</span></div>
+              </div>
+              <div class="asset-row">
+                <div><div class="asset-name">Welding Robot B</div><div class="asset-bar"><div class="asset-bar-fill" style="width:100%;background:linear-gradient(90deg,#dc2626,#ef4444)"></div></div></div>
+                <div style="text-align:right"><div class="asset-kw">168 kW</div><span class="anomaly-flag">ANOMALY</span></div>
+              </div>
+              <div class="asset-row">
+                <div><div class="asset-name">Air Compressor AI</div><div class="asset-bar"><div class="asset-bar-fill" style="width:75%"></div></div></div>
+                <div style="text-align:right"><div class="asset-kw">112 kW</div></div>
+              </div>
+              <div class="asset-row">
+                <div><div class="asset-name">HVAC Zone A</div><div class="asset-bar"><div class="asset-bar-fill" style="width:58%;background:linear-gradient(90deg,#ea580c,#f97316)"></div></div></div>
+                <div style="text-align:right"><div class="asset-kw">86 kW</div><span class="anomaly-flag">ANOMALY</span></div>
+              </div>
+              <div class="asset-row">
+                <div><div class="asset-name">Chiller Unit 1</div><div class="asset-bar"><div class="asset-bar-fill" style="width:50%"></div></div></div>
+                <div style="text-align:right"><div class="asset-kw">74 kW</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-card" style="margin-bottom:0">
+            <div class="card-title" style="margin-bottom:4px">Carbon Intensity Trend</div>
+            <div class="card-sub" style="margin-bottom:12px">kgCO2/unit · ISO 50001 target 0.60</div>
+            <canvas id="carbonChart" height="160"></canvas>
+          </div>
+        </div>
+
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:10px 14px;margin-top:12px;font-size:11px;color:#166534;">
+          Energy KPIs (kWh/unit, carbon intensity, peak demand %) generated consistently across all plants via Semantic Layer — enabling cross-plant benchmarking and ISO 50001 automated reporting without per-plant data reconciliation.
+        </div>
+      </div>
+
+      <!-- ===================== WASTE DETECTION TAB ===================== -->
+      <div class="tab-content" id="tab-waste">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Energy Waste Patterns Detected</div>
+            <div class="section-sub">Anomaly detection within 15 minutes · root-cause attribution to specific asset</div>
+          </div>
+          <div class="total-badge">Rs5,372 TODAY</div>
+        </div>
+
+        <div style="background:#fff8f0;border:1px solid #fed7aa;border-radius:6px;padding:8px 14px;margin-bottom:12px;font-size:10px;color:#6b7a99;">
+          Patterns monitored: Idle phantom loads · Peak demand spikes · Compressed air leakage · HVAC overcooling · Motor inefficiency from voltage imbalance · Furnace heat cycling · Lighting outside production windows
+        </div>
+
+        <!-- ANOMALY 1 -->
+        <div class="anomaly-card">
+          <div style="flex:1">
+            <span class="anomaly-badge detected">WASTE DETECTED</span>
+            <div class="anomaly-title">Idle phantom loads</div>
+            <div class="anomaly-meta">
+              <div class="anomaly-meta-item"><label>Energy Wasted</label><div class="val">142 kWh</div></div>
+              <div class="anomaly-meta-item"><label>Cost Today</label><div class="val cost">Rs1,136</div></div>
+            </div>
+            <div style="margin-top:8px;font-size:10px;color:var(--text-secondary);">AI Root Cause: Equipment left energised during non-production hours. Phantom draw detected on MCH-06 circuit. Standby power cutoff dispatch recommended.</div>
+            <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+              <button class="approve-btn" onclick="openScadaOverlay('MCH-06','Idle phantom loads','Trigger standby cutoff relay','Rs1,136','142 kWh')">Approve Dispatch →</button>
+              <span style="font-size:10px;color:var(--text-secondary)">15-min auto-detect · SCADA write-back ready</span>
+            </div>
+          </div>
+          <div class="anomaly-asset">
+            <label>Root Asset</label>
+            <div class="asset-id">MCH-06</div>
+            <div style="font-size:9px;color:var(--text-secondary);margin-top:4px">Machining Centre</div>
+          </div>
+        </div>
+
+        <!-- ANOMALY 2 -->
+        <div class="anomaly-card">
+          <div style="flex:1">
+            <span class="anomaly-badge detected">WASTE DETECTED</span>
+            <div class="anomaly-title">HVAC overcooling</div>
+            <div class="anomaly-meta">
+              <div class="anomaly-meta-item"><label>Energy Wasted</label><div class="val">98 kWh</div></div>
+              <div class="anomaly-meta-item"><label>Cost Today</label><div class="val cost">Rs2,940</div></div>
+            </div>
+            <div style="margin-top:8px;font-size:10px;color:var(--text-secondary);">AI Root Cause: Setpoint deviation of –3°C from optimal. HVAC-1 running at 110% capacity in Zone B. Recommend setpoint adjustment to 22°C +2°C deadband.</div>
+            <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+              <button class="approve-btn" onclick="openScadaOverlay('HVAC-1','HVAC overcooling','Adjust setpoint +3°C to 22°C','Rs2,940','98 kWh')">Approve Dispatch →</button>
+            </div>
+          </div>
+          <div class="anomaly-asset">
+            <label>Root Asset</label>
+            <div class="asset-id">HVAC-1</div>
+            <div style="font-size:9px;color:var(--text-secondary);margin-top:4px">Air Handling Unit</div>
+          </div>
+        </div>
+
+        <!-- ANOMALY 3 -->
+        <div class="anomaly-card">
+          <div style="flex:1">
+            <span class="anomaly-badge detected">WASTE DETECTED</span>
+            <div class="anomaly-title">Voltage imbalance – motors</div>
+            <div class="anomaly-meta">
+              <div class="anomaly-meta-item"><label>Energy Wasted</label><div class="val">67 kWh</div></div>
+              <div class="anomaly-meta-item"><label>Cost Today</label><div class="val cost">Rs536</div></div>
+            </div>
+            <div style="margin-top:8px;font-size:10px;color:var(--text-secondary);">AI Root Cause: Phase voltage deviation of 4.2% on Line-C feeder. Causing motor efficiency loss of ~8%. Capacitor bank adjustment via SCADA dispatch.</div>
+            <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+              <button class="approve-btn" onclick="openScadaOverlay('Line-C','Voltage imbalance','Capacitor bank adjustment','Rs536','67 kWh')">Approve Dispatch →</button>
+            </div>
+          </div>
+          <div class="anomaly-asset">
+            <label>Root Asset</label>
+            <div class="asset-id">Line-C</div>
+            <div style="font-size:9px;color:var(--text-secondary);margin-top:4px">Feeder Line</div>
+          </div>
+        </div>
+
+        <!-- ANOMALY 4 -->
+        <div class="anomaly-card">
+          <div style="flex:1">
+            <span class="anomaly-badge detected">WASTE DETECTED</span>
+            <div class="anomaly-title">Compressed air leak</div>
+            <div class="anomaly-meta">
+              <div class="anomaly-meta-item"><label>Energy Wasted</label><div class="val">54 kWh</div></div>
+              <div class="anomaly-meta-item"><label>Cost Today</label><div class="val cost">Rs432</div></div>
+            </div>
+            <div style="margin-top:8px;font-size:10px;color:var(--text-secondary);">AI Root Cause: Pressure drop of 1.8 bar detected at CMP-001 output junction. Ultrasonic sensor signature confirms micro-leak at valve fitting J-44B.</div>
+            <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+              <button class="approve-btn" onclick="openScadaOverlay('CMP-001','Compressed air leak','Isolate line J-44B & alert maintenance','Rs432','54 kWh')">Approve Dispatch →</button>
+            </div>
+          </div>
+          <div class="anomaly-asset">
+            <label>Root Asset</label>
+            <div class="asset-id">CMP-001</div>
+            <div style="font-size:9px;color:var(--text-secondary);margin-top:4px">Air Compressor</div>
+          </div>
+        </div>
+
+        <!-- ANOMALY 5 -->
+        <div class="anomaly-card">
+          <div style="flex:1">
+            <span class="anomaly-badge detected">WASTE DETECTED</span>
+            <div class="anomaly-title">Furnace heat cycling</div>
+            <div class="anomaly-meta">
+              <div class="anomaly-meta-item"><label>Energy Wasted</label><div class="val">41 kWh</div></div>
+              <div class="anomaly-meta-item"><label>Cost Today</label><div class="val cost">Rs328</div></div>
+            </div>
+            <div style="margin-top:8px;font-size:10px;color:var(--text-secondary);">AI Root Cause: Furnace MCH-03 cycling ON/OFF 4x per hour due to thermostat hysteresis. Recommend PID controller tuning and thermal load profile optimization.</div>
+            <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+              <button class="approve-btn" onclick="openScadaOverlay('MCH-03','Furnace heat cycling','PID setpoint recalibration','Rs328','41 kWh')">Approve Dispatch →</button>
+            </div>
+          </div>
+          <div class="anomaly-asset">
+            <label>Root Asset</label>
+            <div class="asset-id">MCH-03</div>
+            <div style="font-size:9px;color:var(--text-secondary);margin-top:4px">Industrial Furnace</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== LOAD DISPATCH TAB ===================== -->
+      <div class="tab-content" id="tab-dispatch">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Autonomous Load Dispatch</div>
+            <div class="section-sub">Grid price signal response · SCADA set-point write-back · closed-loop autonomous dispatch</div>
+          </div>
+        </div>
+
+        <!-- GRID PRICE CHART -->
+        <div class="chart-card" style="margin-bottom:12px">
+          <div class="chart-header">
+            <div><div class="card-title">Grid Price Signal – 24h</div><div class="card-sub">Rs/kWh · Off-peak dispatch windows highlighted</div></div>
+          </div>
+          <canvas id="gridChart" height="80"></canvas>
+        </div>
+
+        <!-- DISPATCH CARDS -->
+        <div class="dispatch-card">
+          <div class="dispatch-header">
+            <span class="dispatch-type hvac">HVAC</span>
+            <div class="dispatch-name">HVAC Zone A</div>
+            <span class="dispatch-status pending">PENDING</span>
+          </div>
+          <div class="dispatch-desc">Reduce cooling 15% until 18:00 — grid price above peak threshold. AI confidence: 94.2%</div>
+          <div class="dispatch-kpis">
+            <span>Savings: <strong>54 kWh</strong></span>
+            <span>Cost Reduction: <strong>Rs432</strong></span>
+            <span>Duration: <strong>2h 15m</strong></span>
+          </div>
+          <div class="dispatch-actions">
+            <button class="btn-dispatch" onclick="dispatchAction(this,'HVAC Zone A')">Dispatch via SCADA</button>
+            <button class="btn-schedule" onclick="scheduleAction(this)">Schedule Later</button>
+          </div>
+        </div>
+
+        <div class="dispatch-card">
+          <div class="dispatch-header">
+            <span class="dispatch-type idle">IDLE</span>
+            <div class="dispatch-name">MCH-06 Welding Robot</div>
+            <span class="dispatch-status dispatched">DISPATCHED</span>
+          </div>
+          <div class="dispatch-desc">Idle load cutoff during line stoppage — dispatched via SCADA set-point write-back at 09:42</div>
+          <div class="dispatch-kpis">
+            <span>Savings: <strong>41 kWh</strong></span>
+            <span>Cost Reduction: <strong>Rs328</strong></span>
+            <span>Dispatched: <strong>09:42</strong></span>
+          </div>
+          <div class="dispatch-actions">
+            <span class="btn-dispatched dispatched-success">✓ SCADA write dispatched</span>
+          </div>
+        </div>
+
+        <div class="dispatch-card">
+          <div class="dispatch-header">
+            <span class="dispatch-type demand">DEMAND SHIFT</span>
+            <div class="dispatch-name">CMP-001 Air Compressor</div>
+            <span class="dispatch-status pending">PENDING</span>
+          </div>
+          <div class="dispatch-desc">Defer non-critical demand 30 min off-peak. Tank pressure at 87% — buffer available. AI confidence: 91.8%</div>
+          <div class="dispatch-kpis">
+            <span>Savings: <strong>28 kWh</strong></span>
+            <span>Cost Reduction: <strong>Rs224</strong></span>
+            <span>Window: <strong>16:30–17:00</strong></span>
+          </div>
+          <div class="dispatch-actions">
+            <button class="btn-dispatch" onclick="dispatchAction(this,'CMP-001 Air Compressor')">Dispatch via SCADA</button>
+            <button class="btn-schedule" onclick="scheduleAction(this)">Schedule Later</button>
+          </div>
+        </div>
+
+        <div class="dispatch-card">
+          <div class="dispatch-header">
+            <span class="dispatch-type chiller">CHILLER</span>
+            <div class="dispatch-name">Chiller-1 Pre-cooling</div>
+            <span class="dispatch-status pending">PENDING</span>
+          </div>
+          <div class="dispatch-desc">Pre-cool 2°C below target during off-peak (02:00–06:00) to defer daytime chiller load. Thermal mass strategy.</div>
+          <div class="dispatch-kpis">
+            <span>Savings: <strong>86 kWh</strong></span>
+            <span>Cost Reduction: <strong>Rs688</strong></span>
+            <span>Start: <strong>02:00 tonight</strong></span>
+          </div>
+          <div class="dispatch-actions">
+            <button class="btn-dispatch" onclick="dispatchAction(this,'Chiller-1 Pre-cooling')">Dispatch via SCADA</button>
+            <button class="btn-schedule" onclick="scheduleAction(this)">Schedule Later</button>
+          </div>
+        </div>
+
+        <!-- SCADA WRITE-BACK QUEUE -->
+        <div class="card" style="margin-top:14px">
+          <div class="card-title" style="margin-bottom:10px">SCADA Set-Point Write-Back Queue</div>
+          <table>
+            <thead>
+              <tr><th>Asset</th><th>Parameter</th><th>Current</th><th>Target</th><th>Status</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>HVAC-1</strong></td>
+                <td>Zone B Setpoint</td><td>19°C</td><td>22°C</td>
+                <td><span style="color:var(--orange);font-weight:600">⏳ Pending</span></td>
+                <td><button class="btn-dispatch" style="padding:4px 10px;font-size:10px" onclick="approveQueue(this)">Approve</button></td>
+              </tr>
+              <tr>
+                <td><strong>MCH-06</strong></td>
+                <td>Standby Relay</td><td>ON</td><td>OFF</td>
+                <td><span style="color:var(--green);font-weight:600">✓ Written</span></td>
+                <td><span style="font-size:10px;color:var(--text-secondary)">09:42</span></td>
+              </tr>
+              <tr>
+                <td><strong>CMP-001</strong></td>
+                <td>Compressor Duty</td><td>100%</td><td>0% (defer)</td>
+                <td><span style="color:var(--orange);font-weight:600">⏳ Pending</span></td>
+                <td><button class="btn-dispatch" style="padding:4px 10px;font-size:10px" onclick="approveQueue(this)">Approve</button></td>
+              </tr>
+              <tr>
+                <td><strong>CHI-001</strong></td>
+                <td>Night Setpoint</td><td>18°C</td><td>16°C</td>
+                <td><span style="color:var(--blue);font-weight:600">⏰ Scheduled</span></td>
+                <td><span style="font-size:10px;color:var(--text-secondary)">02:00</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===================== ISO 50001 TAB ===================== -->
+      <div class="tab-content" id="tab-iso">
+        <div class="section-header">
+          <div>
+            <div class="section-title">ISO 50001 Compliance Reporting</div>
+            <div class="section-sub">Automated · no manual pack preparation · Carbon intensity feeds ESG pipelines</div>
+          </div>
+          <div class="automated-badge">AUTOMATED</div>
+        </div>
+
+        <!-- ISO STATUS -->
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-title" style="margin-bottom:12px">ISO 50001 Status</div>
+          <div class="iso-status-grid">
+            <div class="iso-status-card">
+              <div class="iso-status-label">ENPi (kWh/Unit)</div>
+              <div class="iso-status-value blue" id="iso-enpi-val">2.41</div>
+              <div class="iso-status-target">Target: 2.30</div>
+            </div>
+            <div class="iso-status-card">
+              <div class="iso-status-label">Carbon Intensity</div>
+              <div class="iso-status-value green">0.69 kg</div>
+              <div class="iso-status-target">Target: 0.60</div>
+            </div>
+            <div class="iso-status-card">
+              <div class="iso-status-label">Energy Review</div>
+              <div class="iso-status-value teal">April 2026</div>
+              <div class="iso-status-target">Automated</div>
+            </div>
+            <div class="iso-status-card">
+              <div class="iso-status-label">Report Status</div>
+              <div class="iso-status-value green">On track</div>
+              <div class="iso-status-target">Q2 2026</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COMPLIANCE PROGRESS -->
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:12px">ISO Compliance Progress</div>
+            <div class="progress-wrap">
+              <div class="progress-label"><span>Energy Cost Reduction</span><span style="font-weight:700;color:var(--green)">-13.2% / -15% target</span></div>
+              <div class="progress-bar"><div class="progress-fill green" style="width:88%"></div></div>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-label"><span>Carbon Intensity</span><span style="font-weight:700;color:var(--green)">-12% vs Nov</span></div>
+              <div class="progress-bar"><div class="progress-fill blue" style="width:80%"></div></div>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-label"><span>Anomaly Detection Speed</span><span style="font-weight:700;color:var(--green)">15 min avg</span></div>
+              <div class="progress-bar"><div class="progress-fill green" style="width:100%"></div></div>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-label"><span>System Deployment</span><span style="font-weight:700;color:var(--orange)">6 of 8 weeks</span></div>
+              <div class="progress-bar"><div class="progress-fill orange" style="width:75%"></div></div>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-label"><span>SCADA Integration</span><span style="font-weight:700;color:var(--purple)">Plant 2 complete</span></div>
+              <div class="progress-bar"><div class="progress-fill purple" style="width:60%"></div></div>
+            </div>
+          </div>
+
+          <!-- CROSS-PLANT BENCHMARKING -->
+          <div class="card">
+            <div class="card-title" style="margin-bottom:12px">Cross-Plant EnPI Benchmarking</div>
+            <div class="enpi-row">
+              <div class="enpi-plant">Plant 1 – Ahmedabad</div>
+              <div style="display:flex;align-items:center;gap:8px"><div class="enpi-val">2.18</div><span class="enpi-badge best">BEST</span></div>
+            </div>
+            <div class="enpi-row">
+              <div class="enpi-plant">Plant 2 – Pune ★</div>
+              <div style="display:flex;align-items:center;gap:8px"><div class="enpi-val">2.41</div></div>
+            </div>
+            <div class="enpi-row">
+              <div class="enpi-plant">Plant 3 – Chennai</div>
+              <div style="display:flex;align-items:center;gap:8px"><div class="enpi-val">2.67</div></div>
+            </div>
+            <div class="enpi-row">
+              <div class="enpi-plant">Plant 4 – Bangalore</div>
+              <div style="display:flex;align-items:center;gap:8px"><div class="enpi-val">2.84</div></div>
+            </div>
+            <div class="enpi-row">
+              <div class="enpi-plant">Plant 5 – Mumbai</div>
+              <div style="display:flex;align-items:center;gap:8px"><div class="enpi-val">3.12</div><span class="enpi-badge worst">WORST</span></div>
+            </div>
+            <div style="font-size:10px;color:var(--text-secondary);margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">Semantic Layer normalises kWh/unit across plants accounting for shift patterns, product mix, and ambient conditions.</div>
+          </div>
+        </div>
+
+        <!-- TARGET KPI PANEL -->
+        <div class="card" style="margin-top:12px">
+          <div class="card-title" style="margin-bottom:12px">Target KPI Panel</div>
+          <div class="target-grid">
+            <div class="target-item">
+              <div class="target-icon">⚡</div>
+              <div class="target-label">Energy Cost Reduction</div>
+              <div class="target-val">–15%</div>
+            </div>
+            <div class="target-item">
+              <div class="target-icon">🌿</div>
+              <div class="target-label">Carbon Intensity Reduction</div>
+              <div class="target-val">–12%</div>
+            </div>
+            <div class="target-item">
+              <div class="target-icon">🔍</div>
+              <div class="target-label">Anomaly Detection Time</div>
+              <div class="target-val">15-min</div>
+            </div>
+            <div class="target-item">
+              <div class="target-icon">🚀</div>
+              <div class="target-label">Full Deployment Timeline</div>
+              <div class="target-val">8-week</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ESG SUMMARY -->
+        <div class="card" style="margin-top:12px;background:linear-gradient(135deg,#f0fdf4,#ecfdf5)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div class="card-title">Automated ESG KPI Summary – Q3 2026</div>
+            <span class="automated-badge">GENERATED BY AI</span>
+          </div>
+          <div style="font-size:11px;color:#166534;line-height:1.8;">
+            ● Total energy consumed: <strong>18,432 kWh</strong> (–13.2% vs Q3 target) &nbsp;|&nbsp; Scope 2 emissions: <strong>12.7 tCO2e</strong><br>
+            ● Peak demand managed: <strong>1,612 kW</strong> (dispatch offset: 284 kW) &nbsp;|&nbsp; Waste prevented: <strong>Rs 5,372/day</strong><br>
+            ● ISO 50001 conformance: <strong>On track for Q2 2026 certification</strong> &nbsp;|&nbsp; Report auto-filed: <strong>April 18, 2026</strong><br>
+            ● SCADA dispatches executed this week: <strong>23</strong> &nbsp;|&nbsp; Avg anomaly response: <strong>12.4 minutes</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div class="right-panel">
+        <div class="right-tabs">
+          <div class="right-tab active" onclick="switchRightTab('insights',this)">Insights</div>
+          <div class="right-tab" onclick="switchRightTab('unifiedai',this)">Unified AI</div>
+        </div>
+
+        <div id="right-insights" class="right-panel-body">
+          <!-- SEMANTIC LAYER -->
+          <div class="right-section">
+            <div class="right-section-title">Semantic Layer Active</div>
+            <div class="semantic-box">
+              <div class="semantic-title">SEMANTIC LAYER ACTIVE</div>
+              <div class="semantic-sub">1 rec blocked · 9 agents governed</div>
+            </div>
+          </div>
+
+          <!-- YIELD RECOMMENDATIONS -->
+          <div class="right-section">
+            <div class="right-section-title">Yield Recommendations</div>
+            <div class="rec-card high">
+              <div class="rec-header">
+                <span class="rec-level high">HIGH</span>
+                <span class="rec-title">Reactor Temp</span>
+                <span class="rec-yield pos">+2.1% yield</span>
+              </div>
+              <div class="rec-body">182→186C. BLOCKED · CMP-001 bearing fault. Resumes when WO-4839 closes.</div>
+              <div class="rec-blocked">Semantic Layer block active</div>
+            </div>
+
+            <div class="rec-card medium">
+              <div class="rec-header">
+                <span class="rec-level medium">MEDIUM</span>
+                <span class="rec-title">Mixing Speed</span>
+                <span class="rec-yield pos">+0.9% yield</span>
+              </div>
+              <div class="rec-body">420→395 RPM. RUL 110d. Safe to execute.</div>
+              <div class="rec-actions">
+                <button class="rec-btn push" onclick="this.textContent='Pushed ✓';this.classList.remove('push');this.classList.add('written')">Push DCS</button>
+                <button class="rec-btn dismiss" onclick="this.closest('.rec-card').style.opacity='0.4'">Dismiss</button>
+              </div>
+            </div>
+
+            <div class="rec-card info">
+              <div class="rec-header">
+                <span class="rec-level info">INFO</span>
+                <span class="rec-title">Feed Rate</span>
+                <span class="rec-yield pos">+0.5% yield</span>
+              </div>
+              <div class="rec-body">142→138 kg/hr. LIMS-0441 catalyst deactivation.</div>
+              <button class="rec-btn written" style="margin-top:6px">Written to DCS</button>
+            </div>
+          </div>
+
+          <!-- SAFETY ALERT -->
+          <div class="right-section">
+            <div class="right-section-title">Safety Alert</div>
+            <div class="safety-card">
+              <div class="safety-label">CRITICAL</div>
+              <div class="safety-title">Gas leak precursor Zone C</div>
+              <div class="safety-body">H2S sensor 3 pressure anomaly 09:30. Evacuation alert issued.</div>
+            </div>
+          </div>
+
+          <!-- CROSS-AGENT EVENTS -->
+          <div class="right-section">
+            <div class="right-section-title">Cross-Agent Events</div>
+            <div>
+              <div class="cross-event">
+                <div class="cross-event-header">
+                  <span class="cross-tag pdm">PDM</span>
+                  <span style="font-size:9px;color:#999">→</span>
+                  <span class="cross-tag oee">OEE</span>
+                  <div class="cross-event-title">BREAKDOWN CAUSED OEE LOSS</div>
+                  <div class="cross-event-time">09:42</div>
+                </div>
+                <div class="cross-event-body">Servo fault F-041. OEE Unplanned Breakdown 128 min Line C. WO-4841 raised.</div>
+                <div class="cross-event-loss">–14.2% OEE Line C</div>
+              </div>
+              <div class="cross-event">
+                <div class="cross-event-header">
+                  <span class="cross-tag pdm">PDM</span>
+                  <span style="font-size:9px;color:#999">→</span>
+                  <span class="cross-tag oee">OEE</span>
+                  <div class="cross-event-title">BREAKDOWN CAUSED OEE LOSS</div>
+                  <div class="cross-event-time">06:17</div>
+                </div>
+                <div class="cross-event-body">Spindle alarm A-102. Availability 78.3%. 94 min left.</div>
+                <div class="cross-event-loss">–8.4% OEE Line B</div>
+              </div>
+              <div class="cross-event">
+                <div class="cross-event-header">
+                  <span class="cross-tag pdm">PDM</span>
+                  <span style="font-size:9px;color:#999">→</span>
+                  <span class="cross-tag yield">YIELD</span>
+                  <div class="cross-event-title">ASSET HEALTH DEGRADED</div>
+                  <div class="cross-event-time">08:05</div>
+                </div>
+                <div class="cross-event-body">Chiller COP fell <11 kW/kW. MCH-+63H–H3H value at risk – unplanned bearing.</div>
+                <div class="cross-event-loss">–2.8% part MCH-41</div>
+              </div>
+              <div class="cross-event">
+                <div class="cross-event-header">
+                  <span class="cross-tag pdm">PDM</span>
+                  <span style="font-size:9px;color:#999">→</span>
+                  <span class="cross-tag oee">OEE</span>
+                  <div class="cross-event-title">UTILITY CAUSING SPEED LOSS</div>
+                  <div class="cross-event-time">07:00</div>
+                </div>
+                <div class="cross-event-body">Chiller content <11 kW/kW. MCH-+63H result temp blocking Speed Instability.</div>
+                <div class="cross-event-loss">–2.8% part MCH-41</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- UNIFIED AI CHATBOT TAB -->
+        <div id="right-unifiedai" style="display:none;flex-direction:column;height:calc(100% - 36px);">
+          <div class="chat-wrap">
+            <div class="chat-messages" id="chatMessages">
+              <div class="chat-bubble bot">
+                👋 Hi! I'm the <strong>Unified AI Assistant</strong> for Plant 2 – Pune.<br><br>
+                I have full context on energy, anomalies, dispatches, ESG, and all 9 agents. Ask me anything or pick a question below.
+                <div class="chat-time">09:47</div>
+              </div>
+            </div>
+            <div class="chat-presets" id="chatPresets">
+              <span class="chat-preset" onclick="sendPreset(this)">⚡ Current energy cost?</span>
+              <span class="chat-preset" onclick="sendPreset(this)">🔴 Active anomalies?</span>
+              <span class="chat-preset" onclick="sendPreset(this)">📊 Carbon intensity status?</span>
+              <span class="chat-preset" onclick="sendPreset(this)">🚀 Dispatch recommendations?</span>
+              <span class="chat-preset" onclick="sendPreset(this)">🏭 ISO 50001 progress?</span>
+              <span class="chat-preset" onclick="sendPreset(this)">🌿 Which assets waste most energy?</span>
+              <span class="chat-preset" onclick="sendPreset(this)">📈 Peak demand forecast?</span>
+              <span class="chat-preset" onclick="sendPreset(this)">🔧 SCADA queue status?</span>
+            </div>
+            <div class="chat-input-row">
+              <input class="chat-input" id="chatInput" placeholder="Ask the AI…" onkeydown="if(event.key==='Enter')sendChat()" />
+              <button class="chat-send" onclick="sendChat()">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end content-area -->
+  </div><!-- end main -->
+</div><!-- end layout -->
+
+<!-- SCADA OVERLAY -->
+<div class="overlay" id="scadaOverlay">
+  <div class="overlay-box">
+    <div class="overlay-header">
+      <div class="overlay-title">SCADA Write-Back Approval</div>
+      <button class="overlay-close" onclick="closeScadaOverlay()">✕</button>
+    </div>
+    <div class="overlay-warning">
+      ⚠ This action will write a set-point directly to the plant SCADA system. Confirm before proceeding.
+    </div>
+    <div class="overlay-section">
+      <div class="overlay-row"><label>Asset ID</label><span id="ov-asset">—</span></div>
+      <div class="overlay-row"><label>Anomaly Type</label><span id="ov-type">—</span></div>
+      <div class="overlay-row"><label>Dispatch Action</label><span id="ov-action">—</span></div>
+      <div class="overlay-row"><label>Estimated Cost Saving</label><span id="ov-cost" style="color:var(--green)">—</span></div>
+      <div class="overlay-row"><label>Energy Waste Prevented</label><span id="ov-energy">—</span></div>
+      <div class="overlay-row"><label>AI Confidence</label><span style="color:var(--blue)">94.7%</span></div>
+      <div class="overlay-row"><label>Timestamp</label><span id="ov-time">—</span></div>
+    </div>
+    <div style="font-size:11px;color:var(--text-secondary);margin-bottom:16px;">
+      Action will be logged in the SCADA audit trail and cross-referenced in the ISO 50001 energy review pack.
+    </div>
+    <div class="overlay-actions">
+      <button class="btn-cancel" onclick="closeScadaOverlay()">Cancel</button>
+      <button class="btn-confirm" id="confirmBtn" onclick="confirmDispatch()">✓ Confirm SCADA Dispatch</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ——— PLANT DATA ———
+const PLANT_DATA = {
+  all: {
+    name: 'All Plants', location: '',
+    oee: '74.2%', yield: '90.1%', quality: '97.8%', events: '7',
+    cost: '-11.8%', costBase: -11.8, costMin: -13.2, costMax: -10.4,
+    carbon: '0.74 kg', carbonSub: 'kgCO2/unit · -9% vs Nov',
+    peak: '3,248', peakBase: 3248, peakMin: 3200, peakMax: 3300, peakMeta: '▼ +2% above target', peakClass: 'warn',
+    waste: '9', wasteSub: 'Rs 10,820 today',
+    agents: '9 agents · 2 plants',
+    critical: '5', safety: '2', oeeTag: 'OEE 74.2%',
+    loadData: [980,920,960,1040,1240,1560,1860,2140,2440,2620,2760,2880,3010,3248,3180,3060,2840,2680,2520,2280,1980,1680,1400,1140,1020],
+    peakLine: 3000, carbonData: [0.82,0.80,0.77,0.76,0.74,0.72,0.75,0.73,0.70,0.68,0.67,0.74],
+    enpiVal: '2.31', enpiNote: 'Aggregate across 5 plants'
+  },
+  p1: {
+    name: 'Plant 1', location: 'Ahmedabad',
+    oee: '81.4%', yield: '93.6%', quality: '99.1%', events: '1',
+    cost: '-14.8%', costBase: -14.8, costMin: -15.4, costMax: -13.6,
+    carbon: '0.61 kg', carbonSub: 'kgCO2/unit · -16% vs Nov · Best in fleet',
+    peak: '1,240', peakBase: 1240, peakMin: 1210, peakMax: 1270, peakMeta: '▲ on target', peakClass: 'good',
+    waste: '2', wasteSub: 'Rs 1,840 today',
+    agents: '9 agents · Plant 1',
+    critical: '0', safety: '0', oeeTag: 'OEE 81.4%',
+    loadData: [380,360,370,400,490,610,740,860,980,1060,1120,1160,1200,1240,1210,1180,1140,1080,1000,910,780,640,520,440,400],
+    peakLine: 1300, carbonData: [0.72,0.70,0.67,0.65,0.63,0.61,0.63,0.61,0.59,0.58,0.57,0.61],
+    enpiVal: '2.18', enpiNote: 'Best performing plant'
+  },
+  p2: {
+    name: 'Plant 2', location: 'Pune',
+    oee: '76.8%', yield: '91.3%', quality: '98.6%', events: '3',
+    cost: '-13.2%', costBase: -13.2, costMin: -14.8, costMax: -11.5,
+    carbon: '0.69 kg', carbonSub: 'kgCO2/unit · -12% vs Nov',
+    peak: '1,612', peakBase: 1612, peakMin: 1580, peakMax: 1650, peakMeta: '▼ +4% above target', peakClass: 'warn',
+    waste: '5', wasteSub: 'Rs 5,372 today',
+    agents: '9 agents · Plant 2',
+    critical: '3', safety: '1', oeeTag: 'OEE 76.8%',
+    loadData: [520,480,510,560,680,820,980,1120,1280,1380,1450,1520,1580,1612,1590,1560,1480,1400,1320,1200,1050,890,730,600,540],
+    peakLine: 1500, carbonData: [0.78,0.75,0.72,0.71,0.69,0.67,0.70,0.68,0.65,0.63,0.62,0.69],
+    enpiVal: '2.41', enpiNote: 'Active monitoring'
+  }
+};
+
+let currentPlant = 'p2';
+let loadChartRef = null, carbonChartRef = null;
+let liveInterval = null;
+
+function switchPlant(plantId, el) {
+  currentPlant = plantId;
+  const d = PLANT_DATA[plantId];
+  // Update buttons
+  document.querySelectorAll('.plant-btn').forEach(b => {
+    b.classList.remove('active-plant');
+    b.style.fontWeight = ''; b.style.color = 'var(--text-secondary)'; b.style.background = 'transparent';
+  });
+  el.classList.add('active-plant');
+  el.style.fontWeight = '700'; el.style.color = 'var(--blue)'; el.style.background = 'var(--blue-light)';
+
+  // Update topbar
+  document.querySelector('.topbar-live').innerHTML = `<span class="live-dot"></span> Live · ${d.agents}`;
+  document.querySelector('.badge-critical').textContent = d.critical + ' CRITICAL';
+  document.querySelector('.badge-critical').style.background = d.critical === '0' ? '#16a34a' : 'var(--red)';
+  document.querySelector('.badge-safety').style.display = d.safety === '0' ? 'none' : '';
+  document.querySelector('.badge-oee').textContent = d.oeeTag;
+
+  // Update KPIs
+  document.getElementById('kpi-cost').textContent = d.cost;
+  document.getElementById('kpi-cost').className = 'kpi-value ' + (parseFloat(d.cost) <= -13 ? 'green' : 'orange');
+  document.querySelector('[data-kpi="carbon-val"]').textContent = d.carbon;
+  document.querySelector('[data-kpi="carbon-sub"]').textContent = d.carbonSub;
+  document.getElementById('kpi-peak').innerHTML = d.peak + ' <span style="font-size:14px">kW</span>';
+  document.querySelector('[data-kpi="peak-meta"]').textContent = d.peakMeta;
+  document.querySelector('[data-kpi="peak-meta"]').className = 'kpi-meta ' + d.peakClass;
+  document.querySelector('[data-kpi="waste-val"]').textContent = d.waste;
+  document.querySelector('[data-kpi="waste-sub"]').textContent = d.wasteSub;
+
+  // Update sidebar KPIs
+  document.getElementById('sb-oee').textContent = d.oee;
+  document.getElementById('sb-yield').textContent = d.yield;
+  document.getElementById('sb-quality').textContent = d.quality;
+  document.getElementById('sb-events').textContent = d.events;
+
+  // Update agent bar title
+  document.querySelector('.agent-bar .agent-name').textContent = 'Energy Optimisation Agent – ' + d.name + (d.location ? ' ('+d.location+')' : '');
+
+  // Update charts
+  if (loadChartRef) {
+    loadChartRef.data.datasets[0].data = d.loadData;
+    loadChartRef.data.datasets[1].data = Array(25).fill(d.peakLine);
+    loadChartRef.update();
+  }
+  if (carbonChartRef) {
+    carbonChartRef.data.datasets[0].data = d.carbonData;
+    carbonChartRef.update();
+  }
+
+  // Update ISO enpi
+  const enpiEl = document.getElementById('iso-enpi-val');
+  if(enpiEl) enpiEl.textContent = d.enpiVal;
+
+  // Update live ticker range
+  if(liveInterval) clearInterval(liveInterval);
+  startLiveTicker(d);
+
+  // Update chat greeting
+  const firstBubble = document.querySelector('#chatMessages .chat-bubble.bot');
+  if(firstBubble) {
+    firstBubble.innerHTML = `👋 Hi! I'm the <strong>Unified AI Assistant</strong> for ${d.name}${d.location?' – '+d.location:''}.<br><br>I have full context on energy, anomalies, dispatches, ESG, and all 9 agents. Ask me anything or pick a question below.<div class="chat-time">${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>`;
+  }
+}
+
+// ——— TAB SWITCHING ———
+function switchTab(tabId, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  el.classList.add('active');
+}
+function switchRightTab(tabId, el) {
+  document.querySelectorAll('.right-panel-body').forEach(t => t.style.display = 'none');
+  document.getElementById('right-unifiedai').style.display = 'none';
+  document.querySelectorAll('.right-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  if(tabId === 'unifiedai') {
+    const el2 = document.getElementById('right-unifiedai');
+    el2.style.display = 'flex';
+  } else {
+    document.getElementById('right-' + tabId).style.display = 'block';
+  }
+}
+function highlightSidebar(el) {
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ——— SCADA OVERLAY ———
+function openScadaOverlay(asset, type, action, cost, energy) {
+  const now = new Date();
+  document.getElementById('ov-asset').textContent = asset;
+  document.getElementById('ov-type').textContent = type;
+  document.getElementById('ov-action').textContent = action;
+  document.getElementById('ov-cost').textContent = cost;
+  document.getElementById('ov-energy').textContent = energy;
+  document.getElementById('ov-time').textContent = now.toLocaleTimeString();
+  document.getElementById('scadaOverlay').classList.add('show');
+  document.getElementById('confirmBtn').textContent = '✓ Confirm SCADA Dispatch';
+  document.getElementById('confirmBtn').style.background = 'linear-gradient(135deg,#16a34a,#15803d)';
+}
+function closeScadaOverlay() { document.getElementById('scadaOverlay').classList.remove('show'); }
+function confirmDispatch() {
+  const btn = document.getElementById('confirmBtn');
+  btn.textContent = '⏳ Writing to SCADA...';
+  btn.style.background = 'linear-gradient(135deg,#2563eb,#1d4ed8)';
+  setTimeout(() => {
+    btn.textContent = '✓ SCADA write dispatched';
+    btn.style.background = 'linear-gradient(135deg,#16a34a,#22c55e)';
+    setTimeout(closeScadaOverlay, 1400);
+  }, 1200);
+}
+function dispatchAction(btn, name) {
+  btn.textContent = '⏳ Dispatching...'; btn.disabled = true;
+  setTimeout(() => {
+    const span = document.createElement('span');
+    span.className = 'btn-dispatched dispatched-success';
+    span.textContent = '✓ SCADA write dispatched';
+    btn.parentNode.replaceChild(span, btn);
+  }, 1200);
+}
+function scheduleAction(btn) { btn.textContent = '✓ Scheduled'; btn.style.color = 'var(--blue)'; btn.disabled = true; }
+function approveQueue(btn) {
+  btn.textContent = '✓ Approved'; btn.style.background = 'var(--green)'; btn.disabled = true;
+  const td = btn.closest('tr').querySelector('td:nth-child(5)');
+  if(td) td.innerHTML = '<span style="color:var(--green);font-weight:600">✓ Written</span>';
+}
+
+// ——— CHATBOT ———
+const chatResponses = {
+  'current energy cost': d => `⚡ **Energy Cost for ${d.name}:** <strong>${d.cost}</strong> vs target –15%.<br>Current trend: ${parseFloat(d.cost) <= -14 ? '🟢 On track to hit target' : parseFloat(d.cost) <= -12 ? '🟡 Good progress, 1.8% gap remaining' : '🔴 Lagging – 3 load dispatch actions pending'}.<br>Grid price is currently at peak — AI recommending off-peak pre-cooling strategy tonight.`,
+  'active anomalies': d => `🔴 **Active Anomalies for ${d.name}:** <strong>${d.waste}</strong> patterns detected.<br><br>1. Idle phantom loads – MCH-06 (Rs1,136/day)<br>2. HVAC overcooling – HVAC-1 (Rs2,940/day)<br>3. Voltage imbalance – Line-C (Rs536/day)<br>${parseInt(d.waste) > 3 ? '4. Compressed air leak – CMP-001<br>5. Furnace heat cycling – MCH-03<br>' : ''}<br>💡 Total waste: <strong>${d.wasteSub}</strong>. All have approved dispatch actions ready.`,
+  'carbon intensity': d => `🌿 **Carbon Intensity for ${d.name}:** <strong>${d.carbon}</strong><br>${d.carbonSub}.<br><br>ISO 50001 target: 0.60 kg/unit.<br>${parseFloat(d.carbon) <= 0.62 ? '✅ Within 3% of target — excellent progress.' : parseFloat(d.carbon) <= 0.70 ? '📈 Progress on track. Demand shifting during off-peak hours will reduce by ~0.04 kg.' : '⚠️ 23% above target. Recommend load dispatch optimisation.'}<br><br>Carbon feeds auto-ESG pipeline — Q2 report filed April 18.`,
+  'dispatch recommendations': d => `🚀 **Dispatch Recommendations for ${d.name}:**<br><br>1. <strong>HVAC Zone A</strong> – Reduce cooling 15% until 18:00 → save 54 kWh / Rs432<br>2. <strong>CMP-001</strong> – Defer 30 min off-peak → save 28 kWh / Rs224<br>3. <strong>Chiller-1</strong> – Pre-cool tonight 02:00–06:00 → save 86 kWh / Rs688<br><br>Total potential saving: <strong>168 kWh / Rs1,344</strong> today.<br>Go to Load Dispatch tab to approve.`,
+  'iso 50001': d => `🏭 **ISO 50001 for ${d.name}:**<br><br>ENPi: <strong>${d.enpiVal} kWh/unit</strong> (target 2.30)<br>Carbon: <strong>${d.carbon}</strong> (target 0.60 kg)<br>Energy Review: April 2026 ✅<br>Report Status: <strong>On track – Q2 2026</strong><br><br>5 plants benchmarked via Semantic Layer. ${d.enpiVal <= '2.20' ? 'This plant is the fleet benchmark! 🏆' : 'Plant 1 (Ahmedabad) leads at 2.18 kWh/unit.'}`,
+  'waste most energy': d => `🌿 **Top energy-wasting assets in ${d.name}:**<br><br>1. <strong>Welding Robot B</strong> – 168 kW ⚠️ anomaly<br>2. <strong>Injection Moulding #1</strong> – 148 kW<br>3. <strong>Air Compressor AI</strong> – 112 kW<br>4. <strong>CNC Machining Centre</strong> – 92 kW ⚠️ anomaly<br>5. <strong>HVAC Zone A</strong> – 86 kW ⚠️ anomaly<br><br>3 of top 5 have active anomaly flags. SCADA dispatch can reduce combined waste by ~Rs3,500/day.`,
+  'peak demand': d => `📈 **Peak Demand Forecast for ${d.name}:**<br><br>Current: <strong>${d.peak} kW</strong><br>Today's peak: 14:00–16:00 (grid price Rs8.6/kWh)<br><br>AI recommendation: Pre-cool Chiller-1 tonight at Rs3.0/kWh to offset 86 kW tomorrow. Dispatch HVAC Zone A now to reduce peak by 54 kW.<br><br>Forecast tomorrow: <strong>${Math.round(parseInt(d.peak.replace(',',''))*0.94).toLocaleString()} kW</strong> with approved dispatches.`,
+  'scada queue': () => `🔧 **SCADA Write-Back Queue:**<br><br>✅ <strong>MCH-06</strong> – Standby relay OFF — Written 09:42<br>⏳ <strong>HVAC-1</strong> – Zone B setpoint 19°C → 22°C — Pending approval<br>⏳ <strong>CMP-001</strong> – Duty 100% → 0% (defer) — Pending approval<br>🕐 <strong>CHI-001</strong> – Night setpoint 18°C → 16°C — Scheduled 02:00<br><br>2 actions pending your approval. Go to <strong>Load Dispatch</strong> tab to approve.`
+};
+
+function matchResponse(text) {
+  const t = text.toLowerCase();
+  if(t.includes('energy cost') || t.includes('cost?') || t.includes('cost saving')) return 'current energy cost';
+  if(t.includes('anomal') || t.includes('waste detected') || t.includes('active anomal')) return 'active anomalies';
+  if(t.includes('carbon') || t.includes('co2') || t.includes('intensity')) return 'carbon intensity';
+  if(t.includes('dispatch') && !t.includes('scada')) return 'dispatch recommendations';
+  if(t.includes('iso') || t.includes('50001') || t.includes('compliance') || t.includes('enpi')) return 'iso 50001';
+  if(t.includes('waste most') || t.includes('wast') && t.includes('asset')) return 'waste most energy';
+  if(t.includes('peak') || t.includes('demand') || t.includes('forecast')) return 'peak demand';
+  if(t.includes('scada') || t.includes('queue') || t.includes('write-back') || t.includes('writeback')) return 'scada queue';
+  return null;
+}
+
+function addBubble(text, type) {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-bubble ' + type;
+  const time = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  div.innerHTML = text + `<div class="chat-time">${time}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-bubble bot'; div.id = 'typingIndicator';
+  div.innerHTML = '<div class="chat-typing"><span></span><span></span><span></span></div>';
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+}
+
+function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addBubble(text, 'user');
+  showTyping();
+  setTimeout(() => {
+    document.getElementById('typingIndicator')?.remove();
+    const key = matchResponse(text);
+    const d = PLANT_DATA[currentPlant];
+    const reply = key ? chatResponses[key](d) : `I don't have a specific answer for that, but I can tell you that <strong>${d.name}</strong> currently has ${d.waste} active waste patterns costing <strong>${d.wasteSub}</strong>, and energy cost is at <strong>${d.cost}</strong> vs the –15% target. Try one of the suggested questions for detailed analysis!`;
+    addBubble(reply, 'bot');
+  }, 900);
+}
+
+function sendPreset(el) {
+  const text = el.textContent.replace(/^[^ ]+ /, '');
+  document.getElementById('chatInput').value = text;
+  sendChat();
+}
+
+// ——— CHARTS ———
+const dispatchPlugin = {
+  id: 'dispatchWindow',
+  beforeDraw(chart) {
+    const {ctx, chartArea: {top, bottom}, scales: {x}} = chart;
+    if(!x) return;
+    const x1 = x.getPixelForValue(14), x2 = x.getPixelForValue(18);
+    ctx.save();
+    ctx.fillStyle = 'rgba(22,163,74,0.12)';
+    ctx.fillRect(x1, top, x2-x1, bottom-top);
+    ctx.strokeStyle = 'rgba(22,163,74,0.4)'; ctx.lineWidth = 1;
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(x1,top); ctx.lineTo(x1,bottom); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x2,top); ctx.lineTo(x2,bottom); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(22,163,74,0.8)'; ctx.font = 'bold 9px Segoe UI';
+    ctx.fillText('AI Dispatch Window', x1+4, top+12);
+    ctx.restore();
+  }
+};
+
+window.addEventListener('load', () => {
+  const d = PLANT_DATA[currentPlant];
+  const hours = Array.from({length:25}, (_,i)=>String(i).padStart(2,'0')+':00');
+
+  loadChartRef = new Chart(document.getElementById('loadChart').getContext('2d'), {
+    type: 'line', plugins: [dispatchPlugin],
+    data: {
+      labels: hours,
+      datasets: [{
+        label:'Load kW', data: d.loadData,
+        borderColor:'#ea580c', backgroundColor:'rgba(234,88,12,0.08)',
+        fill:true, tension:0.4, borderWidth:2, pointRadius:0, pointHoverRadius:4
+      },{
+        label:'Peak Threshold', data: Array(25).fill(d.peakLine),
+        borderColor:'rgba(220,38,38,0.5)', borderDash:[6,4],
+        borderWidth:1.5, pointRadius:0, fill:false
+      }]
+    },
+    options: {
+      responsive:true,
+      plugins:{legend:{display:false}, tooltip:{mode:'index',intersect:false}},
+      scales:{
+        x:{ticks:{maxTicksLimit:13,font:{size:9}}, grid:{color:'rgba(0,0,0,0.04)'}},
+        y:{ticks:{font:{size:9},callback:v=>v+'kW'}, grid:{color:'rgba(0,0,0,0.04)'}, min:0, max:1800}
+      }
+    }
+  });
+
+  carbonChartRef = new Chart(document.getElementById('carbonChart').getContext('2d'), {
+    type:'line',
+    data:{
+      labels:['Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'],
+      datasets:[{
+        label:'kgCO2/unit', data: d.carbonData,
+        borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,0.08)',
+        fill:true, tension:0.4, borderWidth:2, pointRadius:3, pointBackgroundColor:'#16a34a'
+      },{
+        label:'Target', data:Array(12).fill(0.60),
+        borderColor:'rgba(37,99,235,0.4)', borderDash:[5,4],
+        borderWidth:1.5, pointRadius:0, fill:false
+      }]
+    },
+    options:{
+      responsive:true, plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{font:{size:9}}, grid:{color:'rgba(0,0,0,0.04)'}},
+        y:{ticks:{font:{size:9}}, grid:{color:'rgba(0,0,0,0.04)'}, min:0.50, max:0.90}
+      }
+    }
+  });
+
+  const gridHours = Array.from({length:25}, (_,i)=>String(i).padStart(2,'0'));
+  const gridPrices = [4.2,3.8,3.5,3.2,3.0,3.1,3.8,5.2,6.8,7.4,7.8,8.1,8.4,8.6,8.5,8.3,7.9,7.2,6.4,5.8,5.2,4.8,4.5,4.3,4.2];
+  new Chart(document.getElementById('gridChart').getContext('2d'), {
+    type:'bar',
+    data:{ labels:gridHours, datasets:[{ label:'Rs/kWh', data:gridPrices, backgroundColor:gridPrices.map(v=>v>7?'rgba(220,38,38,0.7)':v<4.5?'rgba(22,163,74,0.7)':'rgba(234,88,12,0.7)'), borderRadius:3 }] },
+    options:{
+      responsive:true, plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>'Rs '+ctx.parsed.y+'/kWh'}}},
+      scales:{ x:{ticks:{font:{size:9},maxTicksLimit:13},grid:{display:false}}, y:{ticks:{font:{size:9},callback:v=>'Rs'+v},grid:{color:'rgba(0,0,0,0.04)'}} }
+    }
+  });
+
+  startLiveTicker(d);
+});
+
+// ——— LIVE TICKER ———
+function startLiveTicker(d) {
+  if(liveInterval) clearInterval(liveInterval);
+  let costBase = d.costBase, peakBase = d.peakBase;
+  const costEl = document.getElementById('kpi-cost');
+  const peakEl = document.getElementById('kpi-peak');
+  liveInterval = setInterval(() => {
+    costBase = Math.max(d.costMin, Math.min(d.costMax, costBase + (Math.random()-0.5)*0.1));
+    peakBase = Math.max(d.peakMin, Math.min(d.peakMax, peakBase + (Math.random()-0.5)*6));
+    if(costEl) costEl.textContent = costBase.toFixed(1)+'%';
+    if(peakEl) peakEl.innerHTML = Math.round(peakBase).toLocaleString()+' <span style="font-size:14px">kW</span>';
+  }, 3000);
+}
+</script>
+</body>
+</html>

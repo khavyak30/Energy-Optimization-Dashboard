@@ -1,0 +1,9 @@
+id,batch,test,result,limit,status,analyst,time
+LIMS-0444,BTH-2241,pH Analysis,7.8,7.5-8.5,pass,R. Kumar,14:22
+LIMS-0443,BTH-2241,Viscosity @ 25C,1842 cP,1800-2200 cP,pass,R. Kumar,13:45
+LIMS-0442,BTH-2240,Moisture Content,0.42%,<=0.50%,pass,S. Rao,11:30
+LIMS-0441,BTH-2240,Catalyst Activity Test,8.9,9.0-11.5,fail,S. Rao,10:15
+LIMS-0440,BTH-2239,Particle Size D50,142 um,130-165 um,pass,A. Mehta,08:50
+LIMS-0439,BTH-2239,Heavy Metals,0.6 ppm,<=1.0 ppm,pass,A. Mehta,07:20
+LIMS-0438,BTH-2238,Assay Purity,98.1%,>=97%,pass,T. Nair,06:00
+LIMS-0437,BTH-2238,pH (10% solution),8.9,7.5-8.5,fail,T. Nair,00:30

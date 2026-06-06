@@ -1,0 +1,7 @@
+id,name,unit,value,target,min,max,drift_rate,drift_direction
+TIC-101,Reactor Temp,°C,182,186,160,200,0.12,-1
+PIC-102,Pressure,bar,8.4,8.4,6,12,0.02,1
+SIC-204,Mixing Speed,RPM,420,395,300,500,0.8,-1
+FIC-301,Feed Rate,kg/hr,142,138,100,180,0.15,-1
+TIC-205,Jacket Temp,°C,45.2,47,30,80,0.08,1
+FIC-401,Coolant Flow,L/min,28.6,28.6,20,40,0.05,1

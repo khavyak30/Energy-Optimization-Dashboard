@@ -1,0 +1,7 @@
+id,name,rated_kw,current_kw,anomaly_threshold_pct,shiftable,critical
+MCH-01,Injection Moulding #1,148,148,12,false,true
+MCH-03,CNC Machining Centre,92,92,12,false,true
+MCH-06,Welding Robot B,164,164,12,false,true
+CMP-001,Air Compressor A1,112,112,12,true,false
+HVAC-1,HVAC Zone A,86,86,12,true,false
+CHP-002,Chiller Unit 1,74,74,12,true,false

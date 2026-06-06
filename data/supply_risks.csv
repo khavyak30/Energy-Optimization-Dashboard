@@ -1,0 +1,6 @@
+supplier_id,supplier_name,sku,description,current_stock_days,reorder_point_days,lead_time_contracted_days,lead_time_actual_days,monthly_consumption,unit_cost_inr,single_source,country_of_origin,financial_risk_score
+SUP-001,Siemens AG,SRV-750W,750W Servo Drive J1,8,15,21,39,6,84000,true,Germany,18
+SUP-002,Alfa Laval,HX-PLATES,Plate Heat Exchanger Elements,22,20,28,35,0.5,420000,false,Sweden,32
+SUP-003,SKF India,BRG-6205,Deep Groove Ball Bearing 6205,45,10,7,7,30,1200,false,India,12
+SUP-004,BASF Chemicals,CMPD-X12,Compound X-12 Base Resin,6,14,30,51,12,96000,true,Germany,55
+SUP-005,Parker Hannifin India,HYD-SEAL-KIT,Hydraulic Seal Kit HPU,30,12,14,16,4,8500,false,India,20

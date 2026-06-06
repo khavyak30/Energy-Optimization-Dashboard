@@ -1,0 +1,5 @@
+zone_id,h2s_ppm_baseline,co_ppm_baseline,ch4_pct_lel_baseline,h2s_alarm1,h2s_alarm2,h2s_evac,co_alarm1,co_alarm2,co_evac,ch4_alarm1,ch4_alarm2,ch4_evac,personnel_normal,amr_enabled
+Zone A,0.0,8.0,0.0,1.0,5.0,10.0,25.0,50.0,100.0,10.0,20.0,25.0,3,false
+Zone B,0.0,12.0,3.0,1.0,5.0,10.0,25.0,50.0,100.0,10.0,20.0,25.0,2,true
+Zone C,2.8,22.0,8.5,1.0,5.0,10.0,25.0,50.0,100.0,10.0,20.0,25.0,4,false
+Zone D,0.0,4.0,0.0,1.0,5.0,10.0,25.0,50.0,100.0,10.0,20.0,25.0,1,false

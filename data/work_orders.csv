@@ -1,0 +1,5 @@
+id,asset_id,asset_name,type,priority,description,status,assigned_to,oee_link
+WO-4841,MCH-06,Welding Robot B,Corrective,P1,Servo Drive J1 overtemp F-041. Vibration 10.2 mm/s. RUL 7d.,open,K. Patel,true
+WO-4840,MCH-03,CNC Machining Centre,Corrective,P1,Spindle bearing degradation. Vibration 9.1 mm/s. RUL 9d.,in_progress,R. Singh,true
+WO-4839,CMP-001,Air Compressor A1,Predictive,P2,Piston rings wear. Bearing RUL 12d. Blocks TIC-101 yield rec.,open,Unassigned,false
+WO-4838,MCH-01,Injection Moulding #1,Predictive,P2,Speed loss via CHP-002 coolant variance.,scheduled,M. Verma,true
